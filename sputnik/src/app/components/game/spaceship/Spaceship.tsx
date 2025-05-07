@@ -101,11 +101,12 @@ export default function Spaceship({ onPositionUpdate, onFuelUpdate }: SpaceshipP
             z: state.velocity[2]
           });
         }
-        
+       
         // Pass fuel updates to parent component
         if (state.fuel !== undefined && onFuelUpdate) {
           onFuelUpdate(state.fuel);
         }
+
       }
     });
     
