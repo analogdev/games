@@ -2,12 +2,14 @@
 Resource for representing the Sputnik spaceship state
 """
 
+import logging
 from typing import Optional
 
-from fastmcp import resource
 from pydantic import BaseModel, Field
 
-from ..api_client import SputnikAPIClient
+from ..app import app, get_api_client
+
+logger = logging.getLogger("sputnik_mcp.resources.spaceship")
 
 
 class Vector3(BaseModel):
@@ -19,6 +21,7 @@ class Vector3(BaseModel):
 
 class SpaceshipState(BaseModel):
     """The current state of the Sputnik spaceship"""
+    sputnik_id: Optional[str] = Field(None, description="ID of the spaceship (for multiplayer mode)")
     position: Vector3 = Field(..., description="Current position in 3D space")
     velocity: Vector3 = Field(..., description="Current velocity vector")
     rotation: Vector3 = Field(..., description="Current rotation in degrees")
@@ -28,60 +31,30 @@ class SpaceshipState(BaseModel):
     target_planet: Optional[str] = Field(None, description="Target planet identifier")
 
 
-# Get API client from context
-def get_api_client() -> SputnikAPIClient:
-    """Get the API client from FastMCP context"""
-    from ..main import get_api_client
-    return get_api_client()
-
-
-@resource
-async def spaceship_state() -> SpaceshipState:
+@app.resource("https://sputnik-mcp.onrender.com/spaceship-4/{sputnik_id}")
+async def spaceship_state_4(sputnik_id: str) -> bool:
     """
-    Current state of the Sputnik spaceship including position, velocity,
-    rotation, fuel level, and movement status.
+    Test
     """
-    client = get_api_client()
-    result = await client.get_status()
-    state_data = result["state"]
-    
-    # Create the position vector
-    position = Vector3(
-        x=state_data["position"][0],
-        y=state_data["position"][1],
-        z=state_data["position"][2]
-    )
-    
-    # Create the velocity vector
-    velocity = Vector3(
-        x=state_data["velocity"][0],
-        y=state_data["velocity"][1],
-        z=state_data["velocity"][2]
-    )
-    
-    # Create the rotation vector
-    rotation = Vector3(
-        x=state_data["rotation"][0],
-        y=state_data["rotation"][1],
-        z=state_data["rotation"][2]
-    )
-    
-    # Create destination vector if it exists
-    destination = None
-    if state_data.get("destination"):
-        destination = Vector3(
-            x=state_data["destination"][0],
-            y=state_data["destination"][1],
-            z=state_data["destination"][2]
-        )
-    
-    # Return the full spaceship state
-    return SpaceshipState(
-        position=position,
-        velocity=velocity,
-        rotation=rotation,
-        fuel=state_data["fuel"],
-        is_moving=state_data["isMoving"],
-        destination=destination,
-        target_planet=state_data.get("targetPlanet")
-    ) 
+    return True
+
+@app.resource("data:/spaceship-4/{sputnik_id}")
+async def spaceship_state_4(sputnik_id: str) -> bool:
+    """
+    Test
+    """
+    return True
+
+@app.resource("spaceship-3/{sputnik_id}")
+async def spaceship_state_3(sputnik_id: str) -> bool:
+    """
+    Test
+    """
+    return True
+
+@app.resource("/spaceship-2/{sputnik_id}")
+async def spaceship_state_2(sputnik_id: str) -> bool:
+    """
+    Test
+    """
+    return True 

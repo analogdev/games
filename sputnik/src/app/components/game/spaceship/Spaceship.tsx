@@ -24,9 +24,10 @@ const arrayToVector3 = (arr: [number, number, number]): THREE.Vector3 =>
 
 type SpaceshipProps = {
   onPositionUpdate?: (position: THREE.Vector3) => void;
+  onFuelUpdate?: (fuel: number) => void;
 };
 
-export default function Spaceship({ onPositionUpdate }: SpaceshipProps) {
+export default function Spaceship({ onPositionUpdate, onFuelUpdate }: SpaceshipProps) {
   const groupRef = useRef<THREE.Group>(null);
   
   // Current position and destination reference
@@ -53,14 +54,17 @@ export default function Spaceship({ onPositionUpdate }: SpaceshipProps) {
   // Initialize Socket.io connection
   useEffect(() => {
     let isMounted = true;
-    console.log('🚀 SPUTNIK: Setting up event listeners');
+    // console.log('🚀 SPUTNIK: Setting up event listeners');
     
     // Use the shared socket instance
     const socket = getSocket();
     socketRef.current = socket;
     
+    // Get the UUID from environment variable
+    const uuid = process.env.NEXT_PUBLIC_SPUTNIK_UUID;
+    
     // Listen for position updates
-    socket.on('spaceship:position', (position: Vector3Position) => {
+    socket.on(`spaceship:${uuid}:position`, (position: Vector3Position) => {
       if (isMounted) {
         // Update the physics system target position for smooth interpolation
         physicsSystem.current.setPosition(position);
@@ -76,7 +80,7 @@ export default function Spaceship({ onPositionUpdate }: SpaceshipProps) {
     });
     
     // Listen for state updates to get destination
-    socket.on('spaceship:state', (state: any) => {
+    socket.on(`spaceship:${uuid}:state`, (state: any) => {
       if (isMounted) {
         // Update destination if provided
         if (state.destination) {
@@ -97,22 +101,28 @@ export default function Spaceship({ onPositionUpdate }: SpaceshipProps) {
             z: state.velocity[2]
           });
         }
+       
+        // Pass fuel updates to parent component
+        if (state.fuel !== undefined && onFuelUpdate) {
+          onFuelUpdate(state.fuel);
+        }
+
       }
     });
     
     // Clean up function
     return () => {
-      console.log('🚀 SPUTNIK: Removing event listeners');
+      // console.log('🚀 SPUTNIK: Removing event listeners');
       isMounted = false;
       
       if (socketRef.current) {
         // Remove just our component's listeners without disconnecting the shared socket
-        socket.off('spaceship:position');
-        socket.off('spaceship:state');
+        socket.off(`spaceship:${uuid}:position`);
+        socket.off(`spaceship:${uuid}:state`);
         socketRef.current = null;
       }
     };
-  }, [onPositionUpdate]);
+  }, [onPositionUpdate, onFuelUpdate]);
   
   // Update visuals each frame
   useFrame((state, delta) => {
